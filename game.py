@@ -5,15 +5,36 @@ from fsm import FSM
 import math
 
 class SkiJumpGame:
+    WIDTH, HEIGHT = 800, 600
+    FPS = 60
+    WHITE = (255, 255, 255)
+    RED = (255, 0, 0)
+    START, TOP_OF_JUMP, GOING_DOWN_JUMP, JUMP_CALCULATOR, GAME_OVER = "s", 'j', "g", "c", "o", 
+    
+    def start_game():
+        pass
+    def begin_jump():
+        pass
+    def jump_measuring():
+        pass
+    def game_over():
+        pass
+    def jump():
+        pass
+
+    def init_fsm(self):
+            #input, current state, action, new state
+            self.fsm.add_transition("start_button", self.START, self.start_game, self.TOP_OF_JUMP)
+            self.fsm.add_transition("space_bar", self.TOP_OF_JUMP, self.begin_jump, self.GOING_DOWN_JUMP)
+            self.fsm.add_transition("reached_bottom", self.GOING_DOWN_JUMP, self.jump_measuring, self.JUMP_CALCULATOR)
+            self.fsm.add_transition("missed_jump", self.JUMP_CALCULATOR, self.game_over, self.GAME_OVER)
+            self.fsm.add_transition("hit_jump", self.JUMP_CALCULATOR, self.jump, self.jumping)
+            self.fsm.add_transition("landed", self.jumping, self.game_over, self.GAME_OVER)
+            self.fsm.add_transition("start_button", self.GAME_OVER, self.start_game, self.TOP_OF_JUMP)
+
     def __init__(self):
         # Initialize Pygame
         pygame.init()
-
-        # Constants
-        self.WIDTH, self.HEIGHT = 800, 600
-        self.FPS = 60
-        self.WHITE = (255, 255, 255)
-        self.RED = (255, 0, 0)
 
         # Player variables
         self.player_width = 50
@@ -27,14 +48,12 @@ class SkiJumpGame:
         self.hasflipped = False
 
         self.initial_velocity = 5
-        self.velocity_x = self.initial_velocity * math.cos(math.radians(35))
-        self.velocity_y = self.initial_velocity * math.sin(math.radians(35))
+        self.velocity_x = self.initial_velocity * math.cos(math.radians(50))
+        self.velocity_y = self.initial_velocity * math.sin(math.radians(50))
 
-        # Game states
-        self.START = 0
-        self.PLAYING = 1
-        self.GAME_OVER = 2
-        self.current_state = self.START
+        self.fsm = FSM(self.START)
+        self.init_fsm()
+
 
         # Initialize screen
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
@@ -49,7 +68,7 @@ class SkiJumpGame:
         self.skier_image = pygame.transform.scale(self.skier_image, (self.player_width, self.player_height))
 
         # Jump image
-        self.jump_image = pygame.image.load("assets/jump.png")
+        self.jump_image = pygame.image.load("assets/ski_bg.jpg")
         self.jump_image = pygame.transform.scale(self.jump_image, (self.WIDTH, self.HEIGHT))
 
     def display_text(self, text, color, y_offset=0):
@@ -63,9 +82,10 @@ class SkiJumpGame:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and self.current_state == self.START:
-                    self.current_state = self.PLAYING
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and self.current_state == self.GAME_OVER:
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and self.fsm.current_state == self.START:
+                    #this might be wrong
+                    self.fsm.current_state = self.GOING_DOWN_JUMP
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and self.fsm.current_state == self.GAME_OVER:
                     self.current_state = self.PLAYING
                     self.jump_target = random.randint(200, 400)
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -82,12 +102,14 @@ class SkiJumpGame:
             self.clock.tick(self.FPS)
 
     def update(self):
-        if self.current_state == self.PLAYING:
+        if self.fsm.current_state == self.GOING_DOWN_JUMP:
+            #this is going_down jump
             if self.jumping:
                 self.player_x += self.velocity_x
                 self.player_y += self.velocity_y
 
                 # Check if skier crossed half the screen
+                #this is jump measure
                 if self.player_x > self.WIDTH / 2 and self.hasflipped == False:
                     self.velocity_y *= -1  # Change direction
                     self.hasflipped = True
@@ -97,7 +119,7 @@ class SkiJumpGame:
                     self.jumping = False
                     self.jump_height = 0
                     self.current_state = self.GAME_OVER
-        elif self.current_state == self.GAME_OVER:
+        elif self.fsm.current_state == self.GAME_OVER:
             if self.jumping:
                 self.jumping = False
                 self.jump_height = 0
@@ -113,9 +135,9 @@ class SkiJumpGame:
         self.screen.blit(self.skier_image, (self.player_x, self.player_y))
 
         # Display game state-specific text
-        if self.current_state == self.START:
+        if self.fsm.current_state == self.START:
             self.display_text("Press SPACE to Start", self.RED)
-        elif self.current_state == self.GAME_OVER:
+        elif self.fsm.current_state == self.GAME_OVER:
             self.display_text("Game Over. Press SPACE to Play Again", self.RED)
 
     def reset_game(self):
