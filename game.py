@@ -25,7 +25,6 @@ class SkiJumpGame:
             self.fsm.add_transition("space_bar", self.JUMP_CALCULATED, None, self.JUMP_CALCULATED)
 
             self.fsm.add_transition("space_bar", self.JUMPING, None, self.JUMPING)
-            self.fsm.add_transition("space_bar", self.GAME_OVER, None, self.TOP_OF_JUMP)
             
             self.fsm.add_transition("end_of_jump", self.JUMP_CALCULATOR, self.jump, self.JUMPING)
             self.fsm.add_transition("end_of_jump", self.JUMP_CALCULATED, self.jump, self.JUMPING)
