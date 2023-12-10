@@ -32,12 +32,9 @@ class SkiJumpGame:
             
             self.fsm.add_transition("landed", self.JUMPING, None, self.GAME_OVER)
 
-            self.fsm.add_transition("space_bar", self.GAME_OVER, self.restart, self.START)
-            
-            
+            self.fsm.add_transition("space_bar", self.GAME_OVER, self.restart, self.START)       
 
     def __init__(self):
-        # Initialize Pygame
         pygame.init()
 
         # Player variables
@@ -60,18 +57,13 @@ class SkiJumpGame:
         pygame.display.set_caption("Ski Jump Game")
         self.clock = pygame.time.Clock()
 
-        # Fonts
         self.font = pygame.font.Font(None, 36)
 
-        # Skier image
+        # Player and background image
         self.skier_image = pygame.image.load("assets/skier.png")
-        
-        # Jump image
         self.jump_image = pygame.image.load("assets/ski_bg.jpg")
         self.skier_image = pygame.transform.scale(self.skier_image, (self.PLAYER_WIDTH, self.PLAYER_HEIGHT))
         self.jump_image = pygame.transform.scale(self.jump_image, (self.WIDTH, self.HEIGHT))
-       
-
 
     def display_text(self, text, color, y_offset=0):
         text_surface = self.font.render(text, True, color)
@@ -79,23 +71,13 @@ class SkiJumpGame:
         self.screen.blit(text_surface, text_rect)
 
     #These functions are: What changes when the game moves into this state?
-    def start_game(self):
-
-         #NEED TO FIGURE OUT IF I ALSO NEED A SEPARATE RESTART_GAME FUCTION OR THIS WORKS FOR BOTH
-        #put up start screen with play button and rules
-        pass
-
-    def begin_jump(self):
-        pass
-
-    #when player reaches bottom of the jump, this function gets performed once
+    #when player reaches minimum of jump
     def jump_measuring(self):
         self.velocity_y *= -0.3  # Change direction
         time_since_reaching_bottom = time.time()
-        
+
+    #uses jump percent to set path for jumping player
     def jump(self):
-        #use jump percent to change y velolcity to move down
-        #jump percent will be a usable number by now
         if self.timing_percent == 0:
             self.velocity_x=0
             self.velocity_y = 4
@@ -103,21 +85,17 @@ class SkiJumpGame:
             self.velocity_x = 3
             self.velocity_y = 2.2/self.timing_percent
 
-    def game_over(self):
-        pass
-
+    #finds amount of jump charge bar has passed
     def calc_jump(self):
         self.timing_percent = ((self.player_x * 6.25 / self.WIDTH) - (41/16))/(27/16)
-        #TODO: find what decay I need to set to reach the very end, then multiply that by timing_percent
-        pass
 
+    #moves player to top and resets variables
     def restart(self):
         self.player_x=0
         self.player_y = 0
         self.velocity_x = self.INITIAL_VELOCITY * math.cos(math.radians(50))
         self.velocity_y = self.INITIAL_VELOCITY * math.sin(math.radians(50))
         self.timing_percent = 0
-
 
     def run(self):
 
@@ -129,10 +107,7 @@ class SkiJumpGame:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        #start screen --> top of jump
                         self.fsm.process("space_bar")
-                    elif event.key == pygame.K_SPACE and self.fsm.current_state == self.JUMP_CALCULATOR:
-                        self.fsm.process("hit_jump")
                     elif event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         sys.exit()
@@ -147,8 +122,6 @@ class SkiJumpGame:
 
     def update(self):
         #calculation / computer based state changes go here
-
-
         if self.fsm.current_state == self.GOING_DOWN_JUMP:
             self.player_x += self.velocity_x
             self.player_y += self.velocity_y
@@ -163,6 +136,7 @@ class SkiJumpGame:
             self.player_y += self.velocity_y
             if self.player_y > self.HEIGHT * 0.75:
                 self.fsm.process("landed")
+
         elif self.fsm.current_state == self.JUMP_CALCULATOR or self.fsm.current_state == self.JUMP_CALCULATED:
             self.player_x += self.velocity_x
             self.player_y += self.velocity_y
@@ -181,7 +155,6 @@ class SkiJumpGame:
             # Draw skier
             self.screen.blit(self.skier_image, (self.player_x, self.player_y))
 
-
         # Display game state-specific text
         if self.fsm.current_state == self.START:
             self.display_text("Welcome to Ski Jump", self.RED, y_offset= self.WIDTH/-20)
@@ -191,16 +164,6 @@ class SkiJumpGame:
             self.display_text("Press SPACE to Play Again", self.RED)
         else:
             self.display_text("Ski Jump", self.RED, y_offset= self.WIDTH*-0.3)
-
-    def reset_game(self):
-        self.player_x = self.WIDTH - self.player_width
-        self.player_y = 0
-        self.jumping = True
-        self.jump_height = 0
-        self.jump_target = random.randint(200, 400)
-        self.velocity_x = self.initial_velocity * math.cos(math.radians(35))
-        self.velocity_y = self.initial_velocity * math.sin(math.radians(35))
-        self.current_state = self.PLAYING
 
 # Create an instance of the SkiJumpGame class and run the game
 game = SkiJumpGame()
