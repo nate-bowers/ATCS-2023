@@ -22,6 +22,7 @@ class SkiJumpGame:
             self.fsm.add_transition("reached_bottom", self.GOING_DOWN_JUMP, self.jump_measuring, self.JUMP_CALCULATOR)
 
             self.fsm.add_transition("space_bar", self.JUMP_CALCULATOR, self.calc_jump, self.JUMP_CALCULATED)
+            self.fsm.add_transition("error", self.JUMP_CALCULATED, None, self.JUMP_CALCULATOR)
             self.fsm.add_transition("space_bar", self.JUMP_CALCULATED, None, self.JUMP_CALCULATED)
 
             self.fsm.add_transition("space_bar", self.JUMPING, None, self.JUMPING)
@@ -87,6 +88,8 @@ class SkiJumpGame:
     #finds amount of jump charge bar has passed
     def calc_jump(self):
         self.timing_percent = ((self.player_x * 6.25 / self.WIDTH) - (41/16))/(27/16)
+        if self.timing_percent < 0:
+            self.timing_percent = 0
 
     #moves player to top and resets variables
     def restart(self):
