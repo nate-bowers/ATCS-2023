@@ -17,7 +17,7 @@ class SkiJumpGame:
 
     def init_fsm(self):
             #input, current state, action, new state
-            self.fsm.add_transition("space_bar", self.START, self.start_game, self.GOING_DOWN_JUMP)
+            self.fsm.add_transition("space_bar", self.START, None, self.GOING_DOWN_JUMP)
             self.fsm.add_transition("space_bar", self.GOING_DOWN_JUMP, None, self.GOING_DOWN_JUMP)
             self.fsm.add_transition("reached_bottom", self.GOING_DOWN_JUMP, self.jump_measuring, self.JUMP_CALCULATOR)
 
@@ -25,12 +25,14 @@ class SkiJumpGame:
             self.fsm.add_transition("space_bar", self.JUMP_CALCULATED, None, self.JUMP_CALCULATED)
 
             self.fsm.add_transition("space_bar", self.JUMPING, None, self.JUMPING)
-            self.fsm.add_transition("space_bar", self.GAME_OVER, self.start_game, self.TOP_OF_JUMP)
+            self.fsm.add_transition("space_bar", self.GAME_OVER, None, self.TOP_OF_JUMP)
             
-            self.fsm.add_transition("missed_jump", self.JUMP_CALCULATOR, self.game_over, self.GAME_OVER)
-            self.fsm.add_transition("missed_jump", self.JUMP_CALCULATED, self.jump, self.JUMPING)
+            self.fsm.add_transition("end_of_jump", self.JUMP_CALCULATOR, self.jump, self.JUMPING)
+            self.fsm.add_transition("end_of_jump", self.JUMP_CALCULATED, self.jump, self.JUMPING)
             
-            self.fsm.add_transition("landed", self.JUMPING, self.game_over, self.GAME_OVER)
+            self.fsm.add_transition("landed", self.JUMPING, None, self.GAME_OVER)
+
+            self.fsm.add_transition("space_bar", self.GAME_OVER, self.restart, self.START)
             
             
 
@@ -93,9 +95,14 @@ class SkiJumpGame:
         
     def jump(self):
         #use jump percent to change y velolcity to move down
-        #if its zero, they missed the jump
-        pass 
-    
+        #jump percent will be a usable number by now
+        if self.timing_percent == 0:
+            self.velocity_x=0
+            self.velocity_y = 4
+        else:
+            self.velocity_x = 3
+            self.velocity_y = 2.2/self.timing_percent
+
     def game_over(self):
         pass
 
@@ -104,8 +111,16 @@ class SkiJumpGame:
         #TODO: find what decay I need to set to reach the very end, then multiply that by timing_percent
         pass
 
+    def restart(self):
+        self.player_x=0
+        self.player_y = 0
+        self.velocity_x = self.INITIAL_VELOCITY * math.cos(math.radians(50))
+        self.velocity_y = self.INITIAL_VELOCITY * math.sin(math.radians(50))
+        self.timing_percent = 0
+
 
     def run(self):
+
         while True:
             # user input based state changes go here
             for event in pygame.event.get():
@@ -121,7 +136,6 @@ class SkiJumpGame:
                     elif event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         sys.exit()
-
             self.update()
             self.draw()
 
@@ -147,15 +161,14 @@ class SkiJumpGame:
         if self.fsm.current_state == self.JUMPING:
             self.player_x += self.velocity_x
             self.player_y += self.velocity_y
-            self.velocity_y -= 10 / self.timing_percent
-            if self.player_y < self.WIDTH * 0.844:
+            if self.player_y > self.HEIGHT * 0.75:
                 self.fsm.process("landed")
-        elif self.fsm.current_state == self.JUMP_CALCULATOR:
+        elif self.fsm.current_state == self.JUMP_CALCULATOR or self.fsm.current_state == self.JUMP_CALCULATED:
             self.player_x += self.velocity_x
             self.player_y += self.velocity_y
             if self.player_x > self.WIDTH * (4.25/6.25): 
                 #jump calculator --> game over
-                self.fsm.process("missed_jump")
+                self.fsm.process("end_of_jump")
 
 
     def draw(self):
@@ -175,7 +188,7 @@ class SkiJumpGame:
             self.display_text("Press SPACE to Start", self.RED)
         elif self.fsm.current_state == self.GAME_OVER:
             self.display_text("Score: " + str(int(self.timing_percent *100)), self.RED, y_offset= self.WIDTH/-20)
-            self.display_text("Game Over. Press SPACE to Play Again", self.RED)
+            self.display_text("Press SPACE to Play Again", self.RED)
         else:
             self.display_text("Ski Jump", self.RED, y_offset= self.WIDTH*-0.3)
 
